@@ -9,7 +9,7 @@ genai.configure(api_key=GEMINI_API_KEY)
 async def solve_math(expression):
     """Solve math problems using Wolfram Alpha with detailed results."""
     try:
-        res = client.query(expression)
+        res = await client.aquery(expression)  # Correct
         pods = list(res.pods)
 
         if not pods:
