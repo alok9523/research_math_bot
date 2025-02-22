@@ -1,3 +1,4 @@
+from telegram.ext import CallbackQueryHandler
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Application, CommandHandler, CallbackContext
 from telegram.constants import ParseMode
