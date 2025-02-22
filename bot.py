@@ -8,21 +8,6 @@ def escape_markdown(text):
     escape_chars = r'\_*[]()~`>#+-=|{}.!'
     return "".join(f"\\{char}" if char in escape_chars else char for char in text)
 
-async def start(update: Update, context):
-    """Send a welcome message with bot information."""
-    start_message = (
-        "**🤖 AI Math Solver Bot**\n\n"
-        "Created by *Alok Ojha*.\n\n"
-        "This bot can help you solve mathematical problems, explain concepts, and compute various expressions.\n\n"
-        "**Commands:**\n"
-        "📌 `/solve <expression>` - Solve a math problem\n"
-        "📌 `/explain <concept>` - Get an explanation of a math concept\n"
-        "📌 `/simplify <expression>` - Simplify an expression\n"
-        "📌 `/diff <expression>` - Differentiate a function\n"
-        "📌 `/integrate <expression>` - Compute an integral\n"
-    )
-    await update.message.reply_text(start_message, parse_mode="MarkdownV2")
-
 def main():
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
@@ -40,7 +25,6 @@ def main():
         await update.message.reply_text(f"**Integral:**\n```{escape_markdown(result)}```", parse_mode="MarkdownV2")
 
     # Register handlers
-    app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("solve", formatted_solve_math))
     app.add_handler(CommandHandler("explain", formatted_explain_math))
     app.add_handler(CommandHandler("simplify", simplify_expression))
