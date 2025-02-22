@@ -1,0 +1,4 @@
+python-telegram-bot
+wolframalpha
+sympy
+google-generativeai
