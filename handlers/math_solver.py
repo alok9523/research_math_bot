@@ -1,6 +1,6 @@
 import wolframalpha
 import google.generativeai as genai
-from sympy import symbols, Eq, solve, simplify, diff, integrate
+from sympy import symbols, simplify, diff, integrate
 from telegram import Update
 from telegram.ext import CallbackContext
 from config import WOLFRAM_API_KEY, GEMINI_API_KEY
@@ -9,24 +9,16 @@ from config import WOLFRAM_API_KEY, GEMINI_API_KEY
 wolfram_client = wolframalpha.Client(WOLFRAM_API_KEY)
 genai.configure(api_key=GEMINI_API_KEY)
 
-def wolfram_query(query):
+async def wolfram_query(query):
     """Fetch structured results from Wolfram Alpha."""
     try:
-        res = wolfram_client.query(query)
-        if res["@success"] == "false":
-            return "Wolfram Alpha couldn't solve this."
-
-        output = []
-        for pod in res["pod"]:
-            title = pod["@title"]
-            content = "\n".join(sub["@plaintext"] for sub in pod["subpod"] if "@plaintext" in sub)
-            output.append(f"*{title}:*\n{content}")
-
-        return "\n\n".join(output)
+        res = await wolfram_client.aquery(query)  # Use async query method
+        result = next(res.results).text if res.results else "No results found."
+        return result
     except Exception as e:
         return f"Error: {e}"
 
-def gemini_explain(query):
+async def gemini_explain(query):
     """Use Gemini AI to provide detailed explanations."""
     try:
         model = genai.GenerativeModel("gemini-pro")
@@ -35,63 +27,63 @@ def gemini_explain(query):
     except Exception as e:
         return f"Error: {e}"
 
-def solve_math(update: Update, context: CallbackContext) -> None:
+async def solve_math(update: Update, context: CallbackContext):
     """Solves math problems using Wolfram Alpha."""
     if not context.args:
-        update.message.reply_text("Usage: /solve equation")
+        await update.message.reply_text("Usage: /solve equation")
         return
 
     query = " ".join(context.args)
-    result = wolfram_query(query)
-    update.message.reply_text(result, parse_mode="Markdown")
+    result = await wolfram_query(query)  # Await async function
+    await update.message.reply_text(result, parse_mode="Markdown")
 
-def explain_math(update: Update, context: CallbackContext) -> None:
+async def explain_math(update: Update, context: CallbackContext):
     """Provides step-by-step explanation using Gemini AI."""
     if not context.args:
-        update.message.reply_text("Usage: /explain math_topic")
+        await update.message.reply_text("Usage: /explain math_topic")
         return
 
     query = " ".join(context.args)
-    explanation = gemini_explain(query)
-    update.message.reply_text(explanation)
+    explanation = await gemini_explain(query)  # Await async function
+    await update.message.reply_text(explanation)
 
-def simplify_expression(update: Update, context: CallbackContext) -> None:
+async def simplify_expression(update: Update, context: CallbackContext):
     """Simplifies a given expression using SymPy."""
     if not context.args:
-        update.message.reply_text("Usage: /simplify (x^2 - 4)/(x - 2)")
+        await update.message.reply_text("Usage: /simplify (x^2 - 4)/(x - 2)")
         return
     
     try:
         expression = " ".join(context.args)
         simplified_expr = simplify(expression)
-        update.message.reply_text(f"Simplified: {simplified_expr}")
+        await update.message.reply_text(f"Simplified: {simplified_expr}")
     except Exception as e:
-        update.message.reply_text(f"Error: {e}")
+        await update.message.reply_text(f"Error: {e}")
 
-def differentiate(update: Update, context: CallbackContext) -> None:
+async def differentiate(update: Update, context: CallbackContext):
     """Finds the derivative of an expression using SymPy."""
     if not context.args:
-        update.message.reply_text("Usage: /diff x^3 + 3*x^2 + 5")
+        await update.message.reply_text("Usage: /diff x^3 + 3*x^2 + 5")
         return
 
     try:
         x = symbols('x')
         expression = " ".join(context.args)
         derivative = diff(expression, x)
-        update.message.reply_text(f"Derivative: {derivative}")
+        await update.message.reply_text(f"Derivative: {derivative}")
     except Exception as e:
-        update.message.reply_text(f"Error: {e}")
+        await update.message.reply_text(f"Error: {e}")
 
-def integrate_expression(update: Update, context: CallbackContext) -> None:
+async def integrate_expression(update: Update, context: CallbackContext):
     """Finds the integral of an expression using SymPy."""
     if not context.args:
-        update.message.reply_text("Usage: /integrate x^3 + 3*x^2 + 5")
+        await update.message.reply_text("Usage: /integrate x^3 + 3*x^2 + 5")
         return
 
     try:
         x = symbols('x')
         expression = " ".join(context.args)
         integral = integrate(expression, x)
-        update.message.reply_text(f"Integral: {integral} + C")
+        await update.message.reply_text(f"Integral: {integral} + C")
     except Exception as e:
-        update.message.reply_text(f"Error: {e}")
+        await update.message.reply_text(f"Error: {e}")
