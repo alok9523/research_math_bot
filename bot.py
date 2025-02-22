@@ -5,7 +5,7 @@ from config import TELEGRAM_BOT_TOKEN
 def main():
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
-    # Register Commands
+    # Register async handlers
     app.add_handler(CommandHandler("solve", solve_math))
     app.add_handler(CommandHandler("explain", explain_math))
     app.add_handler(CommandHandler("simplify", simplify_expression))
