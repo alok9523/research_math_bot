@@ -1,3 +1,4 @@
+import asyncio
 import wolframalpha
 import google.generativeai as genai
 from sympy import symbols, simplify, diff, integrate
@@ -10,11 +11,14 @@ wolfram_client = wolframalpha.Client(WOLFRAM_API_KEY)
 genai.configure(api_key=GEMINI_API_KEY)
 
 async def wolfram_query(query):
-    """Fetch structured results from Wolfram Alpha."""
+    """Fetch structured results from Wolfram Alpha, ensuring full response."""
     try:
-        res = await wolfram_client.aquery(query)  # Use async query method
-        result = next(res.results).text if res.results else "No results found."
-        return result
+        res = await asyncio.to_thread(wolfram_client.query, query)  # Run sync function in async
+        if res.success:
+            results = [pod.text for pod in res.pods if pod.text]  # Extract non-empty text responses
+            return "\n\n".join(results) if results else "No results found."
+        else:
+            return "No results found."
     except Exception as e:
         return f"Error: {e}"
 
@@ -23,7 +27,7 @@ async def gemini_explain(query):
     try:
         model = genai.GenerativeModel("gemini-pro")
         response = model.generate_content(query)
-        return response.text
+        return response.text if response else "No response from Gemini."
     except Exception as e:
         return f"Error: {e}"
 
@@ -34,7 +38,7 @@ async def solve_math(update: Update, context: CallbackContext):
         return
 
     query = " ".join(context.args)
-    result = await wolfram_query(query)  # Await async function
+    result = await wolfram_query(query)
     await update.message.reply_text(result, parse_mode="Markdown")
 
 async def explain_math(update: Update, context: CallbackContext):
@@ -44,7 +48,7 @@ async def explain_math(update: Update, context: CallbackContext):
         return
 
     query = " ".join(context.args)
-    explanation = await gemini_explain(query)  # Await async function
+    explanation = await gemini_explain(query)
     await update.message.reply_text(explanation)
 
 async def simplify_expression(update: Update, context: CallbackContext):
