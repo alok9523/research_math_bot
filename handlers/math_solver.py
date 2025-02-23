@@ -34,19 +34,21 @@ async def solve_math(expression):
     except Exception as e:
         return f"⚠️ *Error:* `{str(e)}`", None
 
-def generate_math_image(math_results):
-    """Generate an image with formatted math output and return it as BytesIO."""
-    fig, ax = plt.subplots(figsize=(6, len(math_results) * 0.8))
-    ax.axis("off")
+import matplotlib.pyplot as plt
+import io
 
-    # Use a font that supports Unicode
-    plt.rcParams["font.family"] = "Arial"  # Use "Noto Sans" if Arial fails
+def generate_math_image(math_results):
+    """Generate an image with properly formatted math output using LaTeX-like rendering."""
+    fig, ax = plt.subplots(figsize=(6, len(math_results) * 0.8))
+    ax.axis("off")  # Hide axes
+
+    # Use Matplotlib's mathtext (LaTeX-like) rendering
+    formatted_text = "\n".join([f"${line}$" for line in math_results])  
 
     # Display formatted text
-    text = "\n".join(math_results)
-    ax.text(0.05, 0.95, text, verticalalignment='top', fontsize=14, family="monospace")
+    ax.text(0.05, 0.95, formatted_text, verticalalignment='top', fontsize=14, family="monospace")
 
-    # Save image to BytesIO instead of a temp file
+    # Save image to BytesIO
     img_bytes = io.BytesIO()
     plt.savefig(img_bytes, format="png", bbox_inches="tight", dpi=300)
     plt.close(fig)
