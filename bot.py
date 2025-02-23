@@ -43,13 +43,22 @@ async def formatted_solve_math(update: Update, context: CallbackContext):
         return
 
     expression = " ".join(context.args)
-    result, image_bytes = await solve_math(expression)  # Get both text and image (as BytesIO)
+    result, image_bytes = await solve_math(expression)  # Get text + image
 
     if image_bytes:
-        image_bytes.seek(0)  # Reset the stream to the beginning before sending
-        await update.message.reply_photo(photo=image_bytes, caption=result, parse_mode=ParseMode.MARKDOWN)
+        image_bytes.seek(0)  # Reset BytesIO pointer
+
+        # Truncate caption if it's too long (1024 chars max)
+        caption = result[:1020] + "..." if len(result) > 1024 else result
+
+        await update.message.reply_photo(photo=image_bytes, caption=caption, parse_mode=ParseMode.MARKDOWN)
+
+        # If the result is too long, send the full text separately
+        if len(result) > 1024:
+            await update.message.reply_text(result, parse_mode=ParseMode.MARKDOWN)
     else:
         await update.message.reply_text(result, parse_mode=ParseMode.MARKDOWN)
+        
 
 async def formatted_explain_math(update: Update, context: CallbackContext):
     """Handles math explanation requests."""
