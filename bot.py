@@ -35,9 +35,8 @@ async def handle_callback(update: Update, context: CallbackContext):
     elif query.data == "explain":
         await query.message.reply_text("📖 *Send me a math concept to explain!*", parse_mode=ParseMode.MARKDOWN)
 
-
 async def formatted_solve_math(update: Update, context: CallbackContext):
-    """Handles math solving requests and sends both text and images if available."""
+    """Handles math solving requests and sends both text and images separately."""
     if not context.args:
         await update.message.reply_text("⚠️ *Please provide a math expression!*", parse_mode=ParseMode.MARKDOWN)
         return
@@ -45,20 +44,17 @@ async def formatted_solve_math(update: Update, context: CallbackContext):
     expression = " ".join(context.args)
     result, image_bytes = await solve_math(expression)  # Get text + image
 
-    if image_bytes:
-        image_bytes.seek(0)  # Reset BytesIO pointer
-
-        # Truncate caption if it's too long (1024 chars max)
-        caption = result[:1020] + "..." if len(result) > 1024 else result
-
-        await update.message.reply_photo(photo=image_bytes, caption=caption, parse_mode=ParseMode.MARKDOWN)
-
-        # If the result is too long, send the full text separately
-        if len(result) > 1024:
-            await update.message.reply_text(result, parse_mode=ParseMode.MARKDOWN)
+    # First, send the text
+    if len(result) > 4096:  # Telegram text limit
+        for i in range(0, len(result), 4096):
+            await update.message.reply_text(result[i:i + 4096], parse_mode=ParseMode.MARKDOWN)
     else:
         await update.message.reply_text(result, parse_mode=ParseMode.MARKDOWN)
-        
+
+    # Then send the image separately
+    if image_bytes:
+        image_bytes.seek(0)  # Reset BytesIO pointer
+        await update.message.reply_photo(photo=image_bytes)
 
 async def formatted_explain_math(update: Update, context: CallbackContext):
     """Handles math explanation requests."""
