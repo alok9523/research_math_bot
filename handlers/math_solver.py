@@ -9,23 +9,25 @@ from config import WOLFRAM_APP_ID, GEMINI_API_KEY
 client = wolframalpha.Client(WOLFRAM_APP_ID)
 genai.configure(api_key=GEMINI_API_KEY)
 
-# Dictionary for replacing mathematical symbols with proper Unicode equivalents
+# Dictionary to replace math expressions with Unicode symbols
 MATH_SYMBOLS = {
-    r"(\d+)\^(\d+)": r"\1⁰¹²³⁴⁵⁶⁷⁸⁹",  # Exponents like x^2 -> x²
+    r"(\d+)\^(\d+)": lambda m: f"{m.group(1)}{''.join('⁰¹²³⁴⁵⁶⁷⁸⁹'[int(d)] for d in m.group(2))}",  # Exponents
+    r"integral": "∫",  # Integral symbol
+    r"sin\^(\d+)(.*?)": lambda m: f"sin{''.join('⁰¹²³⁴⁵⁶⁷⁸⁹'[int(d)] for d in m.group(1))}({m.group(2)})",  # sin^2(x) -> sin²(x)
+    r"cos\^(\d+)(.*?)": lambda m: f"cos{''.join('⁰¹²³⁴⁵⁶⁷⁸⁹'[int(d)] for d in m.group(1))}({m.group(2)})",  # cos^2(x) -> cos²(x)
+    r"tan\^(\d+)(.*?)": lambda m: f"tan{''.join('⁰¹²³⁴⁵⁶⁷⁸⁹'[int(d)] for d in m.group(1))}({m.group(2)})",  # tan^2(x) -> tan²(x)
+    r"e\^([+-]?\d*x?)": lambda m: f"e{''.join('⁰¹²³⁴⁵⁶⁷⁸⁹'[int(d)] for d in m.group(1))}" if m.group(1) else "e",  # e^x -> eˣ
     r"sqrt(.*?)": r"√(\1)",  # Square root
     r"pi": "π",  # Pi
-    r"e\^": "e",  # Euler’s number
     r"sum(.*?)": r"∑(\1)",  # Summation
     r"lim(.*?)": r"lim (\1)",  # Limits
     r"log(.*?)": r"log(\1)",  # Logarithm
-    r"sin(.*?)": r"sin(\1)",  # Sine
-    r"cos(.*?)": r"cos(\1)",  # Cosine
-    r"tan(.*?)": r"tan(\1)",  # Tangent
     r"int(.*?)": r"∫(\1)",  # Integral
+    r"O(.*?)": r"O(\1)",  # Big-O notation
 }
 
 def format_math(expression):
-    """Replace text-based math symbols with Unicode representations."""
+    """Replace text-based math symbols with proper Unicode representations."""
     for pattern, replacement in MATH_SYMBOLS.items():
         expression = re.sub(pattern, replacement, expression)
     return expression
