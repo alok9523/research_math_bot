@@ -1,4 +1,12 @@
-import wolframalpha
+async def explain_math(concept):
+    """Explain a math concept using Gemini AI with better formatting."""
+    try:
+        model = genai.GenerativeModel("gemini-pro")
+        response = model.generate_content(f"Explain the concept of {concept} in simple terms with examples.")
+        return response.text
+
+    except Exception as e:
+        return str(e)import wolframalpha
 import google.generativeai as genai
 from config import WOLFRAM_APP_ID, GEMINI_API_KEY
 
@@ -29,3 +37,13 @@ async def solve_math(expression):
 
     except Exception as e:
         return str(e)  # Return error as raw text
+
+async def explain_math(concept):
+    """Explain a math concept using Gemini AI with better formatting."""
+    try:
+        model = genai.GenerativeModel("gemini-pro")
+        response = model.generate_content(f"Explain the concept of {concept} in simple terms with examples.")
+        return response.text
+
+    except Exception as e:
+        return str(e)
