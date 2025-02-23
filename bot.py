@@ -5,12 +5,6 @@ from telegram.constants import ParseMode
 from handlers.math_solver import solve_math, explain_math
 from config import TELEGRAM_BOT_TOKEN
 
-# Escape function for Markdown formatting
-def escape_markdown(text):
-    """Escapes special characters for Markdown formatting."""
-    escape_chars = r'\_*[]()~`>#+-=|{}.!'
-    return "".join(f"\\{char}" if char in escape_chars else char for char in text)
-
 async def start(update: Update, context: CallbackContext):
     """Start command with bot info and menu."""
     keyboard = [
@@ -41,15 +35,18 @@ async def handle_callback(update: Update, context: CallbackContext):
         await query.message.reply_text("📖 *Send me a math concept to explain!*", parse_mode=ParseMode.MARKDOWN)
 
 async def formatted_solve_math(update: Update, context: CallbackContext):
-    """Handles math solving requests."""
+    """Handles math solving requests and sends both text and images if available."""
     if not context.args:
         await update.message.reply_text("⚠️ *Please provide a math expression!*", parse_mode=ParseMode.MARKDOWN)
         return
 
     expression = " ".join(context.args)
-    result = await solve_math(expression)
-    
-    await update.message.reply_text(escape_markdown(result), parse_mode=ParseMode.MARKDOWN)
+    result, image_path = await solve_math(expression)  # Get both text and image
+
+    if image_path:
+        await update.message.reply_photo(photo=open(image_path, "rb"), caption=result, parse_mode=ParseMode.MARKDOWN)
+    else:
+        await update.message.reply_text(result, parse_mode=ParseMode.MARKDOWN)
 
 async def formatted_explain_math(update: Update, context: CallbackContext):
     """Handles math explanation requests."""
@@ -60,7 +57,7 @@ async def formatted_explain_math(update: Update, context: CallbackContext):
     concept = " ".join(context.args)
     explanation = await explain_math(concept)
     
-    await update.message.reply_text(escape_markdown(explanation), parse_mode=ParseMode.MARKDOWN)
+    await update.message.reply_text(explanation, parse_mode=ParseMode.MARKDOWN)
 
 def main():
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
