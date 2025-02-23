@@ -1,12 +1,4 @@
-async def explain_math(concept):
-    """Explain a math concept using Gemini AI with better formatting."""
-    try:
-        model = genai.GenerativeModel("gemini-pro")
-        response = model.generate_content(f"Explain the concept of {concept} in simple terms with examples.")
-        return response.text
-
-    except Exception as e:
-        return str(e)import wolframalpha
+import wolframalpha
 import google.generativeai as genai
 from config import WOLFRAM_APP_ID, GEMINI_API_KEY
 
@@ -23,20 +15,30 @@ async def solve_math(expression):
         if not pods:
             return "No solution found. Please check your input."
 
-        # Try to extract LaTeX result
+        # Extract LaTeX result
         latex_result = None
         for pod in pods:
             if "Mathematical notation" in pod.title or "Result" in pod.title:
                 latex_result = pod.text
-                break  # Stop at first valid LaTeX response
+                break
 
         if not latex_result:
             return "No LaTeX solution found. Please try another query."
 
-        return latex_result  # Returning raw LaTeX output
+        return latex_result
 
     except Exception as e:
-        return str(e)  # Return error as raw text
+        return str(e)  # Ensure this is the last statement before function ends
+
+async def explain_math(concept):
+    """Explain a math concept using Gemini AI."""
+    try:
+        model = genai.GenerativeModel("gemini-pro")
+        response = model.generate_content(f"Explain the concept of {concept} in simple terms with examples.")
+        return response.text
+
+    except Exception as e:
+        return str(e)  # No extra text after this line
 
 async def explain_math(concept):
     """Explain a math concept using Gemini AI with better formatting."""
