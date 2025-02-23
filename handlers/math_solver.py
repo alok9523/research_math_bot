@@ -7,50 +7,25 @@ client = wolframalpha.Client(WOLFRAM_APP_ID)
 genai.configure(api_key=GEMINI_API_KEY)
 
 async def solve_math(expression):
-    """Solve math problems using Wolfram Alpha with detailed results."""
+    """Solve math problems using Wolfram Alpha and return the result in raw LaTeX format."""
     try:
-        res = await client.aquery(expression)  # Correct
+        res = await client.aquery(expression)  # Async query
         pods = list(res.pods)
 
         if not pods:
-            return "⚠️ *No solution found. Please check your input.*"
+            return "No solution found. Please check your input."
 
-        # Extract primary and additional results
-        main_result = next(res.results).text  # First direct result
-        sub_results = []
-        for pod in pods[1:]:  # Skip primary pod
-            if pod.title and pod.text:
-                sub_results.append(f"🔹 *{pod.title}:* `{pod.text}`")
+        # Try to extract LaTeX result
+        latex_result = None
+        for pod in pods:
+            if "Mathematical notation" in pod.title or "Result" in pod.title:
+                latex_result = pod.text
+                break  # Stop at first valid LaTeX response
 
-        # Format the response
-        formatted_response = (
-            f"📌 **Solution for:** `{expression}`\n\n"
-            f"✅ **Primary Result:** `{main_result}`\n\n"
-        )
+        if not latex_result:
+            return "No LaTeX solution found. Please try another query."
 
-        if sub_results:
-            formatted_response += "\n".join(sub_results)
-
-        return formatted_response
+        return latex_result  # Returning raw LaTeX output
 
     except Exception as e:
-        return f"⚠️ *Error:* `{str(e)}`"
-
-async def explain_math(concept):
-    """Explain a math concept using Gemini AI with better formatting."""
-    try:
-        model = genai.GenerativeModel("gemini-pro")
-        response = model.generate_content(f"Explain the concept of {concept} in simple terms with examples.")
-
-        # Format explanation properly
-        explanation = response.text
-        formatted_response = (
-            f"📖 **Explanation of {concept}:**\n\n"
-            f"{explanation}\n\n"
-            f"📝 *If you need more details, try specifying your request!*"
-        )
-
-        return formatted_response
-
-    except Exception as e:
-        return f"⚠️ *Error:* `{str(e)}`"
+        return str(e)  # Return error as raw text
