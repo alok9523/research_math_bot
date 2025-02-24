@@ -5,7 +5,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.constants import ParseMode
 from handlers.math_solver import solve_math, explain_math
 from config import TELEGRAM_BOT_TOKEN
-import io
+import asyncio
 
 async def start(update: Update, context: CallbackContext):
     """Start command with bot info and menu."""
@@ -17,9 +17,9 @@ async def start(update: Update, context: CallbackContext):
 
     welcome_text = (
         "🔹 *Welcome to Math Solver Bot!* 🔹\n\n"
-        "I'm created to help you solve math problems and explain concepts.\n\n"
+        "I'm here to help you solve math problems and explain concepts.\n\n"
         "📌 *What I can do:*\n"
-        "✅ Solve mathematical equations.\n"
+        "✅ Solve mathematical equations with full steps.\n"
         "✅ Explain math concepts in simple terms.\n\n"
         "📎 Use the buttons below to get started!"
     )
@@ -45,12 +45,15 @@ async def formatted_solve_math(update: Update, context: CallbackContext):
     expression = " ".join(context.args)
     result, image_bytes = await solve_math(expression)  # Get text + image
 
-    # Send text result with proper Markdown formatting
-    if len(result) > 4096:  # Telegram text limit
-        for i in range(0, len(result), 4096):
-            await update.message.reply_text(result[i:i + 4096], parse_mode=ParseMode.MARKDOWN)
+    # Ensure proper Markdown escaping
+    formatted_result = result.replace("-", "\\-").replace(".", "\\.").replace("(", "\").replace(")", "\")
+
+    # Send text result in chunks (if needed)
+    if len(formatted_result) > 4096:
+        for i in range(0, len(formatted_result), 4096):
+            await update.message.reply_text(formatted_result[i:i + 4096], parse_mode=ParseMode.MARKDOWN_V2)
     else:
-        await update.message.reply_text(result, parse_mode=ParseMode.MARKDOWN)
+        await update.message.reply_text(formatted_result, parse_mode=ParseMode.MARKDOWN_V2)
 
     # Send the image separately if available
     if image_bytes:
@@ -66,7 +69,10 @@ async def formatted_explain_math(update: Update, context: CallbackContext):
     concept = " ".join(context.args)
     explanation = await explain_math(concept)
 
-    await update.message.reply_text(explanation, parse_mode=ParseMode.MARKDOWN)
+    # Ensure Markdown escaping
+    formatted_explanation = explanation.replace("-", "\\-").replace(".", "\\.").replace("(", "\").replace(")", "\")
+
+    await update.message.reply_text(formatted_explanation, parse_mode=ParseMode.MARKDOWN_V2)
 
 def main():
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
