@@ -11,7 +11,7 @@ genai.configure(api_key=GEMINI_API_KEY)
 
 # Dictionary to replace math expressions with Unicode and LaTeX representations
 MATH_SYMBOLS = {
-    r"(\d+)\^(\d+)": lambda m: f"{m.group(1)}^{''.join(m.group(2))}",  # Exponents (LaTeX format)
+    r"(\d+)\^(\d+)": lambda m: f"{m.group(1)}^{m.group(2)}",  # Exponents (LaTeX format)
     r"integral": r"\\int",  # Integral symbol in LaTeX
     r"sin\^(\d+)(.*?)": lambda m: f"\\sin^{m.group(1)}({m.group(2)})",  # sin^2(x) -> sin²(x)
     r"cos\^(\d+)(.*?)": lambda m: f"\\cos^{m.group(1)}({m.group(2)})",  # cos^2(x) -> cos²(x)
@@ -22,7 +22,7 @@ MATH_SYMBOLS = {
     r"sum(.*?)": r"\\sum{\1}",  # Summation in LaTeX
     r"lim(.*?)": r"\\lim{\1}",  # Limits in LaTeX
     r"log(.*?)": r"\\log{\1}",  # Logarithm
-    r"int(.*?)": r"\\int{\1}",  # Integral
+    r"int(.*?)": r"\\int{\1}",  # Integral notation
     r"O(.*?)": r"O({\1})",  # Big-O notation
 }
 
