@@ -53,9 +53,13 @@ async def formatted_solve_math(update: Update, context: CallbackContext):
         return
 
     expression = " ".join(context.args)
+
+    # **Apply MarkdownV2 escape to input**
+    safe_expression = escape_markdown_v2(expression)
+
     result, image_bytes = await solve_math(expression)  # Get text + image
 
-    # Escape Markdown special characters
+    # Escape Markdown characters in the result
     safe_result = escape_markdown_v2(result)
 
     # Send text result with proper Markdown formatting
@@ -63,7 +67,7 @@ async def formatted_solve_math(update: Update, context: CallbackContext):
         for i in range(0, len(safe_result), 4096):
             await update.message.reply_text(safe_result[i:i + 4096], parse_mode=ParseMode.MARKDOWN_V2)
     else:
-        await update.message.reply_text(safe_result, parse_mode=ParseMode.MARKDOWN_V2)
+        await update.message.reply_text(f"📌 *Input:* `{safe_expression}`\n\n{safe_result}", parse_mode=ParseMode.MARKDOWN_V2)
 
     # Send the image separately if available
     if image_bytes:
@@ -78,12 +82,14 @@ async def formatted_explain_math(update: Update, context: CallbackContext):
         return
 
     concept = " ".join(context.args)
+    safe_concept = escape_markdown_v2(concept)
+
     explanation = await explain_math(concept)
 
     # Escape Markdown characters
     safe_explanation = escape_markdown_v2(explanation)
 
-    await update.message.reply_text(safe_explanation, parse_mode=ParseMode.MARKDOWN_V2)
+    await update.message.reply_text(f"📌 *Concept:* `{safe_concept}`\n\n{safe_explanation}", parse_mode=ParseMode.MARKDOWN_V2)
 
 
 def main():
