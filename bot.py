@@ -1,31 +1,32 @@
-from telegram.ext import CallbackQueryHandler
+from telegram.ext import (
+    Application, CommandHandler, CallbackQueryHandler, CallbackContext
+)
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import Application, CommandHandler, CallbackContext
 from telegram.constants import ParseMode
 from handlers.math_solver import solve_math, explain_math
 from config import TELEGRAM_BOT_TOKEN
 import io
 
-async def start(update: Update, context: CallbackContext):
+async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
     """Start command with bot info and menu."""
     keyboard = [
         [InlineKeyboardButton("🧮 Solve Math", callback_data="solve")],
         [InlineKeyboardButton("📖 Explain Concept", callback_data="explain")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    
+
     welcome_text = (
         "🔹 *Welcome to Math Solver Bot!* 🔹\n\n"
-        "I'm created by *Alok Ojha* to help you solve math problems and explain concepts.\n\n"
+        "I'm created to help you solve math problems and explain concepts.\n\n"
         "📌 *What I can do:*\n"
         "✅ Solve mathematical equations.\n"
         "✅ Explain math concepts in simple terms.\n\n"
         "📎 Use the buttons below to get started!"
     )
-    
+
     await update.message.reply_text(welcome_text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
 
-async def handle_callback(update: Update, context: CallbackContext):
+async def handle_callback(update: Update, context: CallbackContext.DEFAULT_TYPE):
     """Handles button clicks from the inline keyboard."""
     query = update.callback_query
     await query.answer()
@@ -35,7 +36,7 @@ async def handle_callback(update: Update, context: CallbackContext):
     elif query.data == "explain":
         await query.message.reply_text("📖 *Send me a math concept to explain!*", parse_mode=ParseMode.MARKDOWN)
 
-async def formatted_solve_math(update: Update, context: CallbackContext):
+async def formatted_solve_math(update: Update, context: CallbackContext.DEFAULT_TYPE):
     """Handles math solving requests and sends both text and images separately."""
     if not context.args:
         await update.message.reply_text("⚠️ *Please provide a math expression!*", parse_mode=ParseMode.MARKDOWN)
@@ -44,19 +45,19 @@ async def formatted_solve_math(update: Update, context: CallbackContext):
     expression = " ".join(context.args)
     result, image_bytes = await solve_math(expression)  # Get text + image
 
-    # First, send the text
+    # Send text result with proper Markdown formatting
     if len(result) > 4096:  # Telegram text limit
         for i in range(0, len(result), 4096):
             await update.message.reply_text(result[i:i + 4096], parse_mode=ParseMode.MARKDOWN)
     else:
         await update.message.reply_text(result, parse_mode=ParseMode.MARKDOWN)
 
-    # Then send the image separately
+    # Send the image separately if available
     if image_bytes:
         image_bytes.seek(0)  # Reset BytesIO pointer
         await update.message.reply_photo(photo=image_bytes)
 
-async def formatted_explain_math(update: Update, context: CallbackContext):
+async def formatted_explain_math(update: Update, context: CallbackContext.DEFAULT_TYPE):
     """Handles math explanation requests."""
     if not context.args:
         await update.message.reply_text("⚠️ *Please provide a math concept!*", parse_mode=ParseMode.MARKDOWN)
@@ -64,7 +65,7 @@ async def formatted_explain_math(update: Update, context: CallbackContext):
 
     concept = " ".join(context.args)
     explanation = await explain_math(concept)
-    
+
     await update.message.reply_text(explanation, parse_mode=ParseMode.MARKDOWN)
 
 def main():
