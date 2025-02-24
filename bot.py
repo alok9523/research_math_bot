@@ -5,48 +5,25 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.constants import ParseMode
 from handlers.math_solver import solve_math, explain_math
 from config import TELEGRAM_BOT_TOKEN
-import asyncio
 
-async def start(update: Update, context: CallbackContext):
-    """Start command with bot info and menu."""
-    keyboard = [
-        [InlineKeyboardButton("🧮 Solve Math", callback_data="solve")],
-        [InlineKeyboardButton("📖 Explain Concept", callback_data="explain")],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+import re
 
-    welcome_text = (
-        "🔹 *Welcome to Math Solver Bot!* 🔹\n\n"
-        "I'm here to help you solve math problems and explain concepts.\n\n"
-        "📌 *What I can do:*\n"
-        "✅ Solve mathematical equations with full steps.\n"
-        "✅ Explain math concepts in simple terms.\n\n"
-        "📎 Use the buttons below to get started!"
-    )
-
-    await update.message.reply_text(welcome_text, reply_markup=reply_markup, parse_mode=ParseMode.MARKDOWN)
-
-async def handle_callback(update: Update, context: CallbackContext):
-    """Handles button clicks from the inline keyboard."""
-    query = update.callback_query
-    await query.answer()
-
-    if query.data == "solve":
-        await query.message.reply_text("🧮 *Send me a math problem to solve!*", parse_mode=ParseMode.MARKDOWN)
-    elif query.data == "explain":
-        await query.message.reply_text("📖 *Send me a math concept to explain!*", parse_mode=ParseMode.MARKDOWN)
+def escape_markdown(text):
+    """Escapes special characters for Telegram Markdown v2 formatting."""
+    special_chars = r"[*_()~`>#+\-=|{}.!]"
+    return re.sub(f"([{special_chars}])", r"\\\1", text)
 
 async def formatted_solve_math(update: Update, context: CallbackContext):
     """Handles math solving requests and sends both text and images separately."""
     if not context.args:
-        await update.message.reply_text("⚠️ *Please provide a math expression!*", parse_mode=ParseMode.MARKDOWN)
+        await update.message.reply_text("⚠️ *Please provide a math expression!*", parse_mode=ParseMode.MARKDOWN_V2)
         return
 
     expression = " ".join(context.args)
     result, image_bytes = await solve_math(expression)  # Get text + image
 
-    # Ensure proper Markdown escaping
-    formatted_result = result.replace("-", "\\-").replace(".", "\\.").replace("(", "\").replace(")", "\")
+    # Escape special characters before sending
+    formatted_result = escape_markdown(result)
 
     # Send text result in chunks (if needed)
     if len(formatted_result) > 4096:
@@ -63,28 +40,13 @@ async def formatted_solve_math(update: Update, context: CallbackContext):
 async def formatted_explain_math(update: Update, context: CallbackContext):
     """Handles math explanation requests."""
     if not context.args:
-        await update.message.reply_text("⚠️ *Please provide a math concept!*", parse_mode=ParseMode.MARKDOWN)
+        await update.message.reply_text("⚠️ *Please provide a math concept!*", parse_mode=ParseMode.MARKDOWN_V2)
         return
 
     concept = " ".join(context.args)
     explanation = await explain_math(concept)
 
-    # Ensure Markdown escaping
-    formatted_explanation = explanation.replace("-", "\\-").replace(".", "\\.").replace("(", "\").replace(")", "\")
+    # Escape special characters before sending
+    formatted_explanation = escape_markdown(explanation)
 
     await update.message.reply_text(formatted_explanation, parse_mode=ParseMode.MARKDOWN_V2)
-
-def main():
-    app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
-
-    # Register Handlers
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("solve", formatted_solve_math))
-    app.add_handler(CommandHandler("explain", formatted_explain_math))
-    app.add_handler(CallbackQueryHandler(handle_callback))
-
-    print("🤖 Bot is running...")
-    app.run_polling(allowed_updates=Update.ALL_TYPES)
-
-if __name__ == "__main__":
-    main()
