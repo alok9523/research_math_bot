@@ -50,4 +50,12 @@ async def explain_concept(update: Update, context: CallbackContext) -> None:
         return
 
     try:
-        response = requests.post("https://api.gemini.ai/ex
+        response = requests.post("https://api.gemini.ai/explain", json={"concept": concept, "api_key": GEMINI_API_KEY})
+        response.raise_for_status()  # Raise an error for bad responses
+        explanation = response.json().get("explanation", "Sorry, I couldn't find an explanation.")
+
+        await update.message.reply_text(explanation)
+
+    except requests.RequestException as e:
+        logger.error(f"Error fetching from Gemini AI: {e}")
+        await update.message.reply_text("There was an error processing your request.")
