@@ -1,6 +1,6 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext, CallbackQueryHandler
-from config import Config
+from config import config
 import handlers.help as help_handler
 import handlers.math_solver as math_solver
 import handlers.formatter as formatter
