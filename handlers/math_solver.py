@@ -114,3 +114,26 @@ def generate_latex_image(latex_results):
     """Generate a LaTeX-rendered image for better math visualization."""
     fig, ax = plt.subplots(figsize=(6, len(latex_results) * 0.8))
     ax.axis("off")
+latex_code = "$$" + "\n".join(latex_results) + "$$"
+    ax.text(0.05, 0.95, latex_code, verticalalignment='top', fontsize=14, family="serif")
+
+    img_bytes = io.BytesIO()
+    plt.savefig(img_bytes, format="png", bbox_inches="tight", dpi=300)
+    plt.close(fig)
+    img_bytes.seek(0)
+
+    return img_bytes
+
+async def explain_math(concept):
+    """Explain math concepts with LaTeX formatting using Gemini AI."""
+    try:
+        model = genai.GenerativeModel("gemini-pro")
+        response = model.generate_content(f"Explain the concept of {concept} in simple terms with examples.")
+
+        explanation = response.text
+        formatted_response = f"📖 Explanation of {format_expression(concept, READABLE_SYMBOLS)}:\n\n{explanation}\n\n📝 *If you need more details, try specifying your request!*"
+
+        return formatted_response
+
+    except Exception as e:
+        return f"⚠️ *Error:* {str(e)}"
