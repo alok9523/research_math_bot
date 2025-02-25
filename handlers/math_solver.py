@@ -1,45 +1,69 @@
-# handlers/math_solver.py
-
+import wolframalpha
+import google.generativeai as genai
+from config import Config
+from telegram import InputMediaPhoto
 import requests
-from telegram import Update
-from telegram.ext import ContextTypes
-from telegram.constants import ParseMode
-import config
+import io
+from PIL import Image
+from .formatter import format_wolfram_response, format_concept_explanation
 
-async def solve_equation(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    expression = ' '.join(context.args)
-    if not expression:
-        await update.message.reply_text("Please provide a math expression to solve.")
+# Initialize APIs
+wolfram_client = wolframalpha.Client(Config.WOLFRAM_APP_ID)
+genai.configure(api_key=Config.GEMINI_API_KEY)
+gemini_model = genai.GenerativeModel('gemini-pro')
+
+async def solve_command(update, context):
+    query = ' '.join(context.args)
+    if not query:
+        await update.message.reply_text("Please provide a math problem after /solve")
         return
+    await process_math_query(update, query)
 
-    # Call Wolfram Alpha API
-    try:
-        response = requests.get(f"http://api.wolframalpha.com/v2/query?input={expression}&format=plaintext&output=JSON&appid={config.WOLFRAM_APP_ID}")
-        data = response.json()
-
-        if data['queryresult']['success']:
-            pods = data['queryresult']['pods']
-            solution = pods[1]['subpods'][0]['plaintext']
-            await update.message.reply_text(
-                f"*Solution:* {solution}",
-                parse_mode=ParseMode.MARKDOWN
-            )
-        else:
-            await update.message.reply_text("Sorry, I couldn't solve that expression. Please try another one.")
-    except Exception as e:
-        await update.message.reply_text(f"An error occurred: {str(e)}")
-
-async def explain_concept(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    topic = ' '.join(context.args)
-    if not topic:
-        await update.message.reply_text("Please provide a math topic to explain.")
+async def explain_command(update, context):
+    concept = ' '.join(context.args)
+    if not concept:
+        await update.message.reply_text("Please provide a concept to explain after /explain")
         return
+    await process_concept_explanation(update, concept)
 
-    # Call Gemini API (or any other API for explanations)
+async def handle_message(update, context):
+    text = update.message.text
+    if text.startswith('/'):
+        return
+    await process_math_query(update, text)
+
+async def process_math_query(update, query):
     try:
-        # Example: response = requests.get(f"https://api.gemini.com/explain?topic={topic}&key={config.GEMINI_API_KEY}")
-        # For now, let's just send a placeholder response
-        explanation = f"Explanation for *{topic}*: [This is a placeholder response.]"
-        await update.message.reply_text(explanation, parse_mode=ParseMode.MARKDOWN)
+        # Try Wolfram Alpha first
+        res = wolfram_client.query(query)
+        formatted_text, images = format_wolfram_response(res)
+        
+        # Send images if available
+        media_group = []
+        for img_url in images[:4]:  # Telegram allows max 4 images per group
+            media_group.append(InputMediaPhoto(media=img_url))
+        
+        if media_group:
+            await update.message.reply_media_group(media=media_group)
+        
+        # Send formatted text
+        await update.message.reply_text(formatted_text, parse_mode='Markdown')
+        
     except Exception as e:
-        await update.message.reply_text(f"An error occurred: {str(e)}")
+        # Fallback to Gemini
+        print(f"Wolfram error: {e}")
+        response = gemini_model.generate_content(f"Solve this math problem: {query} with detailed explanations")
+        await update.message.reply_text(format_concept_explanation(response.text))
+
+async def process_concept_explanation(update, concept):
+    try:
+        response = gemini_model.generate_content(f"Explain {concept} in simple terms with examples")
+        formatted_text = format_concept_explanation(response.text)
+        await update.message.reply_text(formatted_text, parse_mode='Markdown')
+    except Exception as e:
+        await update.message.reply_text(f"Sorry, I couldn't process that request. Error: {e}")
+
+def get_wolfram_image(url):
+    response = requests.get(url)
+    image = Image.open(io.BytesIO(response.content))
+    return image
