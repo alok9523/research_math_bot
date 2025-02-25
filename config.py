@@ -1,9 +1,7 @@
-import os
-from dotenv import load_dotenv
+TELEGRAM_BOT_TOKEN = "7604560900:AAHWFEFEu3DsovVtYmAiZbj5bL25YLG8nKE"
 
-# Load environment variables
-load_dotenv()
+# Wolfram Alpha API Key
+WOLFRAM_APP_ID = "3GJAG3-658AEE8RX5"  # ✅ Changed to WOLFRAM_APP_ID
 
-WOLFRAM_APP_ID = os.getenv("WOLFRAM_APP_ID")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+# Gemini API Key (Google AI)
+GEMINI_API_KEY = "AIzaSyB59k6rte1ESmAc5ZNVGlxjgUYrNnL7jCc"
