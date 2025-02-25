@@ -1,19 +1,10 @@
-async def help(update, context):
-    help_text = """
-🤖 **Math Solver Bot Help**
+from telegram import Update
+from telegram.ext import CallbackContext
 
-🔹 *Commands*:
-/solve [problem] - Solve math equations
-/explain [concept] - Explain mathematical concepts
-/help - Show this help message
-
-🔹 *Examples*:
-/solve x^2 + 5x + 6 = 0
-/explain Pythagorean theorem
-
-🔹 *Features*:
-- Step-by-step solutions
-- Visual representations
-- Natural language explanations
-"""
-    await update.message.reply_text(help_text, parse_mode='Markdown')
+def help_command(update: Update, context: CallbackContext) -> None:
+    """Send a message when the command /help is issued."""
+    help_text = (
+        "I can help you with the following commands:\n"
+        "/solve <expression> - Solve a math expression.\n"
+        "/explain <concept> - Explain a math concept.\n"
+        "Just send me a message with a math expression, and I'll do my
