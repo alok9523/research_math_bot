@@ -1,14 +1,19 @@
-# handlers/help.py
+async def help(update, context):
+    help_text = """
+🤖 **Math Solver Bot Help**
 
-from telegram import Update
-from telegram.ext import ContextTypes
-from telegram.constants import ParseMode
+🔹 *Commands*:
+/solve [problem] - Solve math equations
+/explain [concept] - Explain mathematical concepts
+/help - Show this help message
 
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    help_text = (
-        "*Available commands:*\n"
-        "/solve <expression> - Solve a math expression.\n"
-        "/explain <topic> - Explain a math concept.\n"
-        "/help - Show this help message."
-    )
-    await update.message.reply_text(help_text, parse_mode=ParseMode.MARKDOWN)
+🔹 *Examples*:
+/solve x^2 + 5x + 6 = 0
+/explain Pythagorean theorem
+
+🔹 *Features*:
+- Step-by-step solutions
+- Visual representations
+- Natural language explanations
+"""
+    await update.message.reply_text(help_text, parse_mode='Markdown')
