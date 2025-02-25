@@ -1,23 +1,11 @@
-def format_wolfram_response(response):
-    formatted_text = ""
-    images = []
-    
-    for pod in response.pods:
-        if pod.title:
-            formatted_text += f"**{pod.title}**\n"
-        for sub in pod.subpods:
-            if sub.plaintext:
-                formatted_text += f"`{sub.plaintext}`\n\n"
-            if sub.img:
-                images.append(sub.img.src)
-    
-    if not formatted_text:
-        return "No solution found", images
-    
-    formatted_text = formatted_text.replace('\\', '').replace('_', '\\_')
-    return formatted_text, images
+def format_math_expression(expression: str) -> str:
+    # Example: Replace * with × and / with ÷
+    return expression.replace("*", "×").replace("/", "÷")
 
-def format_concept_explanation(text):
-    formatted = text.replace('**', '*').replace('\\n', '\n')
-    formatted = f"📚 Explanation:\n\n{formatted}"
-    return formatted
+def format_latex(expression: str) -> str:
+    # Example: Wrap expression in LaTeX format
+    return f"`{expression}`"
+
+def format_markdown(expression: str) -> str:
+    # Example: Wrap expression in Markdown format
+    return f"**{expression}**"
