@@ -1,61 +1,35 @@
-import requests
-from telegram import Update
-from telegram.ext import CallbackContext
+import wolframalpha
+import google.generativeai as genai
 from config import WOLFRAM_APP_ID, GEMINI_API_KEY
-import logging
 
-logger = logging.getLogger(__name__)
+# Initialize Wolfram Alpha client
+wolfram_client = wolframalpha.Client(WOLFRAM_APP_ID)
 
-async def solve_equation(update: Update, context: CallbackContext) -> None:
-    """Solve a math equation using Wolfram Alpha."""
-    equation = ' '.join(context.args)
-    if not equation:
-        await update.message.reply_text("Please provide a math expression to solve.")
-        return
+# Initialize Gemini AI
+genai.configure(api_key=GEMINI_API_KEY)
+gemini_model = genai.GenerativeModel("gemini-pro")
 
-    try:
-        response = requests.get(f"http://api.wolframalpha.com/v2/query", params={
-            'input': equation,
-            'format': 'plaintext',
-            'output': 'JSON',
-            'appid': WOLFRAM_APP_ID
-        })
-        response.raise_for_status()  # Raise an error for bad responses
-        data = response.json()
+def solve_with_wolfram(problem: str) -> str:
+    response = wolfram_client.query(problem)
+    return next(response.results).text
 
-        # Process the response and extract the solution
-        pods = data.get('queryresult', {}).get('pods', [])
-        if not pods:
-            await update.message.reply_text("No results found.")
-            return
+def explain_with_gemini(solution: str) -> str:
+    prompt = f"Explain the solution to this math problem step by step: {solution}"
+    response = gemini_model.generate_content(prompt)
+    return response.text
 
-        solution = ""
-        for pod in pods:
-            title = pod.get('title', '')
-            subpods = pod.get('subpods', [])
-            if subpods:
-                solution += f"{title}: {subpods[0].get('plaintext', 'No solution available')}\n"
-
-        await update.message.reply_text(solution.strip())
-
-    except requests.RequestException as e:
-        logger.error(f"Error fetching from Wolfram Alpha: {e}")
-        await update.message.reply_text("There was an error processing your request.")
-
-async def explain_concept(update: Update, context: CallbackContext) -> None:
-    """Explain a math concept using Gemini AI."""
-    concept = ' '.join(context.args)
-    if not concept:
-        await update.message.reply_text("Please provide a math concept to explain.")
-        return
+async def handle_math_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    problem = update.message.text
+    await update.message.reply_text("Solving your problem... Please wait! ⏳")
 
     try:
-        response = requests.post("https://api.gemini.ai/explain", json={"concept": concept, "api_key": GEMINI_API_KEY})
-        response.raise_for_status()  # Raise an error for bad responses
-        explanation = response.json().get("explanation", "Sorry, I couldn't find an explanation.")
+        # Step 1: Get solution from Wolfram Alpha
+        wolfram_result = solve_with_wolfram(problem)
 
-        await update.message.reply_text(explanation)
+        # Step 2: Get explanation from Gemini AI
+        explanation = explain_with_gemini(wolfram_result)
 
-    except requests.RequestException as e:
-        logger.error(f"Error fetching from Gemini AI: {e}")
-        await update.message.reply_text("There was an error processing your request.")
+        # Step 3: Send the results to the user
+        await update.message.reply_text(f"**Solution:**\n{wolfram_result}\n\n**Explanation:**\n{explanation}")
+    except Exception as e:
+        await update.message.reply_text(f"An error occurred: {str(e)}")
