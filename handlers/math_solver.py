@@ -1,6 +1,8 @@
 import wolframalpha
 import google.generativeai as genai
 from config import WOLFRAM_APP_ID, GEMINI_API_KEY
+from telegram import Update
+from telegram.ext import ContextTypes
 
 # Initialize Wolfram Alpha client
 wolfram_client = wolframalpha.Client(WOLFRAM_APP_ID)
