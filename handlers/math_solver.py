@@ -11,13 +11,13 @@ wolfram_client = wolframalpha.Client(WOLFRAM_APP_ID)
 genai.configure(api_key=GEMINI_API_KEY)
 gemini_model = genai.GenerativeModel("gemini-pro")
 
-def solve_with_wolfram(problem: str) -> str:
-    response = wolfram_client.query(problem)
+async def solve_with_wolfram(problem: str) -> str:
+    response = await wolfram_client.aquery(problem)  # Use await here
     return next(response.results).text
-
-def explain_with_gemini(solution: str) -> str:
+    
+async def explain_with_gemini(solution: str) -> str:
     prompt = f"Explain the solution to this math problem step by step: {solution}"
-    response = gemini_model.generate_content(prompt)
+    response = await gemini_model.agenerate_content(prompt)  # Use await here
     return response.text
 
 async def handle_math_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -26,10 +26,10 @@ async def handle_math_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         # Step 1: Get solution from Wolfram Alpha
-        wolfram_result = solve_with_wolfram(problem)
+        wolfram_result = await solve_with_wolfram(problem)  # Use await here
 
         # Step 2: Get explanation from Gemini AI
-        explanation = explain_with_gemini(wolfram_result)
+        explanation = await explain_with_gemini(wolfram_result)  # Use await here
 
         # Step 3: Send the results to the user
         await update.message.reply_text(f"**Solution:**\n{wolfram_result}\n\n**Explanation:**\n{explanation}")
