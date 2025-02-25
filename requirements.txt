@@ -3,3 +3,4 @@ wolframalpha
 sympy
 google-generativeai
 matplotlib
+python-dotenv
