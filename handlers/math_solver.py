@@ -114,8 +114,7 @@ def generate_latex_image(latex_results):
     """Generate a LaTeX-rendered image for better math visualization."""
     fig, ax = plt.subplots(figsize=(6, len(latex_results) * 0.8))
     ax.axis("off")
-latex_code = "$$" + "\n".join(latex_results) + "$$"
-    ax.text(0.05, 0.95, latex_code, verticalalignment='top', fontsize=14, family="serif")
+latex_code = "$$" + "\n".join(latex_results) + "$$"ax.text(0.05, 0.95, latex_code, verticalalignment='top', fontsize=14, family="serif")
 
     img_bytes = io.BytesIO()
     plt.savefig(img_bytes, format="png", bbox_inches="tight", dpi=300)
