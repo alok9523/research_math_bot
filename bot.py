@@ -1,6 +1,6 @@
 import logging
-from telegram import Update, ForceReply
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram import Update, ForceReply, InlineQueryResultArticle, InputTextMessageContent
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, CallbackContext, InlineQueryHandler
 from config import TOKEN
 from handlers.math_solver import solve_equation, explain_concept
 from handlers.help import help_command
@@ -9,32 +9,51 @@ from handlers.help import help_command
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def start(update: Update, context: CallbackContext) -> None:
+async def start(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /start is issued."""
     user = update.effective_user
-    update.message.reply_html(
+    await update.message.reply_html(
         rf"Hi {user.mention_html()}! I'm your Math Solver Bot. Use /help to see what I can do.",
         reply_markup=ForceReply(selective=True),
     )
 
-def main() -> None:
-    """Start the bot."""
-    updater = Updater(TOKEN)
+async def inline_query_handler(update: Update, context: CallbackContext) -> None:
+    """Handle inline queries."""
+    query = update.inline_query.query
+    if query:
+        results = [
+            InlineQueryResultArticle(
+                id=1,
+                title="Solve Equation",
+                input_message_content=InputTextMessageContent(f"/solve {query}"),
+            ),
+            InlineQueryResultArticle(
+                id=2,
+                title="Explain Concept",
+                input_message_content=InputTextMessageContent(f"/explain {query}"),
+            ),
+        ]
+        await update.inline_query.answer(results)
 
-    dispatcher = updater.dispatcher
+async def main() -> None:
+    """Start the bot."""
+    application = ApplicationBuilder().token(TOKEN).build()
 
     # Command handlers
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(CommandHandler("help", help_command))
-    dispatcher.add_handler(CommandHandler("solve", solve_equation))
-    dispatcher.add_handler(CommandHandler("explain", explain_concept))
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("solve", solve_equation))
+    application.add_handler(CommandHandler("explain", explain_concept))
 
     # Handle text messages
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, solve_equation))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, solve_equation))
+
+    # Inline query handler
+    application.add_handler(InlineQueryHandler(inline_query_handler))
 
     # Start the Bot
-    updater.start_polling()
-    updater.idle()
+    await application.run_polling()
 
 if __name__ == '__main__':
-    main()
+    import asyncio
+    asyncio.run(main())
