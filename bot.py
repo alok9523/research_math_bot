@@ -1,49 +1,40 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext, CallbackQueryHandler
-from config import config
-import handlers.help as help_handler
-import handlers.math_solver as math_solver
-import handlers.formatter as formatter
+import logging
+from telegram import Update, ForceReply
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from config import TOKEN
+from handlers.math_solver import solve_equation, explain_concept
+from handlers.help import help_command
 
-async def start(update: Update, context: CallbackContext):
-    keyboard = [
-        [InlineKeyboardButton("Solve Equation", callback_data='solve')],
-        [InlineKeyboardButton("Explain Concept", callback_data='explain')]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text(
-        "Welcome to Math Solver Bot! 🧮\n\n"
-        "Choose an option or use commands:\n"
-        "/solve - Solve math problems\n"
-        "/explain - Explain mathematical concepts",
-        reply_markup=reply_markup
+# Set up logging
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+def start(update: Update, context: CallbackContext) -> None:
+    """Send a message when the command /start is issued."""
+    user = update.effective_user
+    update.message.reply_html(
+        rf"Hi {user.mention_html()}! I'm your Math Solver Bot. Use /help to see what I can do.",
+        reply_markup=ForceReply(selective=True),
     )
 
-async def button_handler(update: Update, context: CallbackContext):
-    query = update.callback_query
-    await query.answer()
-    
-    if query.data == 'solve':
-        await query.message.reply_text("Please send your math problem to solve")
-    elif query.data == 'explain':
-        await query.message.reply_text("What mathematical concept would you like explained?")
+def main() -> None:
+    """Start the bot."""
+    updater = Updater(TOKEN)
 
-def main():
-    application = Application.builder().token(Config.TELEGRAM_TOKEN).build()
-    
+    dispatcher = updater.dispatcher
+
     # Command handlers
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("help", help_handler.help))
-    application.add_handler(CommandHandler("solve", math_solver.solve_command))
-    application.add_handler(CommandHandler("explain", math_solver.explain_command))
-    
-    # Callback handlers
-    application.add_handler(CallbackQueryHandler(button_handler))
-    
-    # Message handlers
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, math_solver.handle_message))
-    
-    application.run_polling()
+    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(CommandHandler("help", help_command))
+    dispatcher.add_handler(CommandHandler("solve", solve_equation))
+    dispatcher.add_handler(CommandHandler("explain", explain_concept))
 
-if __name__ == "__main__":
+    # Handle text messages
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, solve_equation))
+
+    # Start the Bot
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == '__main__':
     main()
