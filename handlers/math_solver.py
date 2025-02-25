@@ -15,33 +15,33 @@ genai.configure(api_key=GEMINI_API_KEY)
 # Readable math symbols
 READABLE_SYMBOLS = {
     r"(\d+)\^(\d+)": r"\1^\2",  # Exponents
-    r"integral": "∫",  
-    r"sin\^(\d+)(.*?)": r"sin^\1(\2)",  
-    r"cos\^(\d+)(.*?)": r"cos^\1(\2)",  
-    r"tan\^(\d+)(.*?)": r"tan^\1(\2)",  
-    r"e\^([+-]?\d*x?)": r"e^\1",  
-    r"sqrt(.*?)": r"√(\1)",  
-    r"pi": "π",  
-    r"sum(.*?)": r"∑(\1)",  
-    r"lim(.*?)": r"lim(\1)",  
-    r"log(.*?)": r"log(\1)",  
-    r"O(.*?)": r"O(\1)",  
+    r"integral": "∫",
+    r"sin\^(\d+)(.*?)": r"sin^\1(\2)",
+    r"cos\^(\d+)(.*?)": r"cos^\1(\2)",
+    r"tan\^(\d+)(.*?)": r"tan^\1(\2)",
+    r"e\^([+-]?\d*x?)": r"e^\1",
+    r"sqrt(.*?)": r"√(\1)",
+    r"pi": "π",
+    r"sum(.*?)": r"∑(\1)",
+    r"lim(.*?)": r"lim(\1)",
+    r"log(.*?)": r"log(\1)",
+    r"O(.*?)": r"O(\1)",
 }
 
 # LaTeX math symbols
 LATEX_SYMBOLS = {
-    r"(\d+)\^(\d+)": r"{\1}^{\2}",  
-    r"integral": r"\int",  
-    r"sin\^(\d+)(.*?)": r"\sin^{\1}(\2)",  
-    r"cos\^(\d+)(.*?)": r"\cos^{\1}(\2)",  
-    r"tan\^(\d+)(.*?)": r"\tan^{\1}(\2)",  
-    r"e\^([+-]?\d*x?)": r"e^{\1}",  
-    r"sqrt(.*?)": r"\sqrt{\1}",  
-    r"pi": r"\pi",  
-    r"sum(.*?)": r"\sum{\1}",  
-    r"lim(.*?)": r"\lim{\1}",  
-    r"log(.*?)": r"\log{\1}",  
-    r"O(.*?)": r"O({\1})",  
+    r"(\d+)\^(\d+)": r"{\1}^{\2}",
+    r"integral": r"\int",
+    r"sin\^(\d+)(.*?)": r"\sin^{\1}(\2)",
+    r"cos\^(\d+)(.*?)": r"\cos^{\1}(\2)",
+    r"tan\^(\d+)(.*?)": r"\tan^{\1}(\2)",
+    r"e\^([+-]?\d*x?)": r"e^{\1}",
+    r"sqrt(.*?)": r"\sqrt{\1}",
+    r"pi": r"\pi",
+    r"sum(.*?)": r"\sum{\1}",
+    r"lim(.*?)": r"\lim{\1}",
+    r"log(.*?)": r"\log{\1}",
+    r"O(.*?)": r"O({\1})",
 }
 
 def format_expression(expression, symbol_dict):
@@ -99,6 +99,20 @@ async def formatted_solve_math(update: Update, context: CallbackContext):
         image_bytes.seek(0)
         await update.message.reply_photo(photo=image_bytes)
 
+async def explain_math(concept):
+    """Explain math concepts with LaTeX formatting using Gemini AI."""
+    try:
+        model = genai.GenerativeModel("gemini-pro")
+        response = model.generate_content(f"Explain the concept of {concept} in simple terms with examples.")
+
+        explanation = response.text
+        formatted_response = f"📖 Explanation of {format_expression(concept, READABLE_SYMBOLS)}:\n\n{explanation}\n\n📝 *If you need more details, try specifying your request!*"
+
+        return formatted_response
+
+    except Exception as e:
+        return f"⚠️ *Error:* {str(e)}"
+
 async def formatted_explain_math(update: Update, context: CallbackContext):
     """Explains mathematical concepts using Gemini AI."""
     if not context.args:
@@ -114,7 +128,9 @@ def generate_latex_image(latex_results):
     """Generate a LaTeX-rendered image for better math visualization."""
     fig, ax = plt.subplots(figsize=(6, len(latex_results) * 0.8))
     ax.axis("off")
-latex_code = "$$" + "\n".join(latex_results) + "$$"ax.text(0.05, 0.95, latex_code, verticalalignment='top', fontsize=14, family="serif")
+
+    latex_code = "$$" + "\n".join(latex_results) + "$$"  # Fixed indentation issue
+    ax.text(0.05, 0.95, latex_code, verticalalignment='top', fontsize=14, family="serif")
 
     img_bytes = io.BytesIO()
     plt.savefig(img_bytes, format="png", bbox_inches="tight", dpi=300)
@@ -122,17 +138,3 @@ latex_code = "$$" + "\n".join(latex_results) + "$$"ax.text(0.05, 0.95, latex_cod
     img_bytes.seek(0)
 
     return img_bytes
-
-async def explain_math(concept):
-    """Explain math concepts with LaTeX formatting using Gemini AI."""
-    try:
-        model = genai.GenerativeModel("gemini-pro")
-        response = model.generate_content(f"Explain the concept of {concept} in simple terms with examples.")
-
-        explanation = response.text
-        formatted_response = f"📖 Explanation of {format_expression(concept, READABLE_SYMBOLS)}:\n\n{explanation}\n\n📝 *If you need more details, try specifying your request!*"
-
-        return formatted_response
-
-    except Exception as e:
-        return f"⚠️ *Error:* {str(e)}"
